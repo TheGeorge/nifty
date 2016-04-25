@@ -27,6 +27,7 @@
 
 -export([main/1,
          run/2,
+         init/0,
          help/0,
          parse_args/1,
          init_config/1,
@@ -79,10 +80,18 @@ main(Args) ->
             rebar_utils:delayed_halt(1)
     end.
 
+-spec init() -> ok.
+init() ->
+    _ = application:load(rebar),
+    %% Make sure memoization server is running
+    case rmemo:start() of
+        {ok, _} -> ok;
+        {error, {already_started, _}} -> ok
+    end.
+
 %% Erlang-API entry point
 -spec run(rebar_config:config(), [string()]) -> ok.
 run(BaseConfig, Commands) ->
-    _ = application:load(rebar),
     run_aux(BaseConfig, Commands).
 
 %% ====================================================================
@@ -195,9 +204,9 @@ run_aux(BaseConfig, Commands) ->
 help() ->
     OptSpecList = option_spec_list(),
     rebar_getopt:usage(OptSpecList, "rebar",
-                 "[var=value,...] <command,...>",
-                 [{"var=value", "rebar global variables (e.g. force=1)"},
-                  {"command", "Command to run (e.g. compile)"}]),
+                       "[var=value,...] <command,...>",
+                       [{"var=value", "rebar global variables (e.g. force=1)"},
+                        {"command", "Command to run (e.g. compile)"}]),
     ?CONSOLE(
        "Type 'rebar help <CMD1> <CMD2>' for help on specific commands."
        "~n~n", []),

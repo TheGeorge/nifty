@@ -19,7 +19,7 @@
 -export_type([options/0]).
 
 %% @doc Renders an <code>InterfaceFile</code> into a Erlang module containing of <code>ModuleName</code>.erl
-%% <code>ModuleName</code>.c, <code>ModuleName</code>.app and  <code>rebar</code>.config and returns the 
+%% <code>ModuleName</code>.c, <code>ModuleName</code>.app and  <code>rebar</code>.config and returns the
 %% contents of these files as tuple of iolists (in this order). It uses <code>CFlags</code> to parse the
 %% <code>InterfaceFile</code> and <code>Options</code> to compile it. <code>Options</code> are equivalent to
 %% rebar options.
@@ -33,9 +33,9 @@ render(InterfaceFile, ModuleName, CFlags, Options) ->
 	    {error, no_file};
 	true ->
 	    case nifty_clangparse:parse([PathToH|CFlags]) of
-		{error, fail} -> 
+		{error, fail} ->
 		    {error, compile};
-		{FuncLoc, Raw_Symbols, Raw_Types, Unsave_Constructors} -> 
+		{FuncLoc, Raw_Symbols, Raw_Types, Unsave_Constructors} ->
 		    Constructors = check_constructors(Unsave_Constructors),
 		    Unsave_Types = nifty_clangparse:build_type_table(Raw_Types, Constructors),
 		    Types = check_types(Unsave_Types, Constructors),
@@ -61,7 +61,7 @@ render(InterfaceFile, ModuleName, CFlags, Options) ->
 render_with_errors(Template, Vars) ->
     try Template:render(Vars) of
 	{ok, Output} -> Output;
-	{error, Err} -> 
+	{error, Err} ->
 	    io:format("Error during rendering of template ~p:~n~p~nPlease report the error~n", [Template, Err]),
 	    throw(nifty_render_error)
     catch
@@ -94,10 +94,10 @@ filter_symbols(InterfaceFile, Symbols, FuncLoc) ->
 
 check_symbols(Symbols, Types) ->
     Pred = fun (_, Args) -> check_args(Args, Types) end,
-    Accml = fun(Name, Args, AccIn) -> case check_args(Args, Types) of 
+    Accml = fun(Name, Args, AccIn) -> case check_args(Args, Types) of
 					  true -> AccIn;
-					  false -> [Name|AccIn] 
-				      end 
+					  false -> [Name|AccIn]
+				      end
 	    end,
     {dict:filter(Pred, Symbols), dict:fold(Accml, [], Symbols)}.
 
@@ -108,10 +108,10 @@ check_args([H|T], Types) ->
 	       {argument, _, Tp} -> Tp
 	   end,
     case nifty_types:check_type(Type, Types) of
-	false -> 
+	false ->
 	    false;
 	true -> check_args(T, Types)
-    end.    
+    end.
 
 store_files(InterfaceFile, ModuleName, Options, RenderOutput) ->
     {ok, Path} = file:get_cwd(),
@@ -171,11 +171,11 @@ rebar_commands(RawArgs) ->
     {BaseConfig1, Cmds} = nifty_rebar:save_options(BaseConfig, Args),
     nifty_rebar:run(BaseConfig1, Cmds).
 
-%% @doc Generates a NIF module out of a C header file and compiles it, 
-%% generating wrapper functions for all functions present in the header file. 
-%% <code>InterfaceFile</code> specifies the header file. <code>Module</code> specifies 
+%% @doc Generates a NIF module out of a C header file and compiles it,
+%% generating wrapper functions for all functions present in the header file.
+%% <code>InterfaceFile</code> specifies the header file. <code>Module</code> specifies
 %% the module name of the translated NIF. <code>Options</code> specifies the compile
-%% options. These options are a superset rebar's config options and include 
+%% options. These options are a superset rebar's config options and include
 %% additional Nifty options: <br/>
 %%     <code>{nifty, NiftyOptions}</code> <br/>
 %% where NiftyOptions is a list of options, which can be : <br/>
@@ -184,6 +184,7 @@ rebar_commands(RawArgs) ->
 %% </table>
 -spec compile(string(), module(), options()) -> 'ok' | {'error', reason()} | {'warning' , {'not_complete' , [nonempty_string()]}}.
 compile(InterfaceFile, Module, Options) ->
+    _ = nifty_rebar:init(),
     ModuleName = atom_to_list(Module),
     os:putenv("NIF", libname(ModuleName)),
     {ok, NiftyRoot} = file:get_cwd(),
@@ -192,7 +193,7 @@ compile(InterfaceFile, Module, Options) ->
     Env = build_env(ModuleName, UCO),
     CFlags = string:tokens(proplists:get_value("CFLAGS", Env, ""), " "),
     case render(InterfaceFile, ModuleName, CFlags, UCO) of
-	{error, E} -> 
+	{error, E} ->
 	    {error, E};
 	{Output, Lost} ->
 	    ok = store_files(InterfaceFile, ModuleName, UCO, Output),
@@ -238,7 +239,7 @@ get_spec_env(ModuleName, [S|T]) ->
 norm_opts(Options) ->
     case proplists:get_value(env, Options) of
 	undefined -> Options;
-	Env -> 
+	Env ->
 	    [{env, merge_env(expand_env(Env, []), dict:new())}| proplists:delete(env, Options)]
     end.
 
@@ -251,7 +252,7 @@ merge_env([{Key, Opt}|T], D) ->
 	    merge_env(T, dict:store(Key, Opt, D))
     end.
 
-remove_envvar(Key, Opt) -> 
+remove_envvar(Key, Opt) ->
     %% remove in the beginning and the end
     Striped = string:strip(Opt),
     K1 = "${" ++ Key ++ "}",
@@ -261,7 +262,7 @@ remove_envvar(Key, Opt) ->
     E23 = length(Striped) - length(K2) + 1,
     case string:str(Striped, K1) of
 	1 ->
-	    string:substr(Striped, length(K1)+1);	   
+	    string:substr(Striped, length(K1)+1);
 	E1 ->
 	    string:substr(Striped, 1, E1);
 	_ ->
@@ -273,7 +274,7 @@ remove_envvar(Key, Opt) ->
 		_ ->
 		    case string:str(Striped, K3) of
 			1 ->
-			    string:substr(Striped, length(K3)+1);	   
+			    string:substr(Striped, length(K3)+1);
 			E23 ->
 			    string:substr(Striped, 1, E23 - 1);
 			_ ->
@@ -292,21 +293,21 @@ libname(ModuleName) ->
 
 update_compile_options(InterfaceFile, ModuleName, CompileOptions) ->
     NewPort_Spec = case proplists:get_value(port_specs, CompileOptions) of
-		       undefined -> 
+		       undefined ->
 			   [module_spec(".*", [], [], InterfaceFile, ModuleName)];
-		       UPortSpec ->	
+		       UPortSpec ->
 			   update_port_spec(InterfaceFile, ModuleName, UPortSpec, [], false)
 		   end,
     orddict:store(port_specs, NewPort_Spec, orddict:from_list(CompileOptions)).
 
 module_spec(ARCH, Sources, Options, InterfaceFile,  ModuleName) ->
     {
-      ARCH, 
+      ARCH,
       libname(ModuleName),
       ["c_src/"++ModuleName++"_nif.c"|abspath_sources(Sources)],
-      norm_opts(join_options([{env, 
-			       [{"CFLAGS", 
-				 "$CFLAGS -I"++filename:absname(filename:dirname(nifty_utils:expand(InterfaceFile)))}]}], 
+      norm_opts(join_options([{env,
+			       [{"CFLAGS",
+				 "$CFLAGS -I"++filename:absname(filename:dirname(nifty_utils:expand(InterfaceFile)))}]}],
 			     Options))
     }.
 
@@ -323,7 +324,7 @@ abspath_sources([S|T], Acc) ->
     abspath_sources(T, [filename:absname(nifty_utils:expand(S))|Acc]).
 
 
-update_port_spec(_,  _, [], Acc, true) -> 
+update_port_spec(_,  _, [], Acc, true) ->
     Acc;
 update_port_spec(InterfaceFile,  ModuleName, [], Acc, false) -> %% empty spec
     [module_spec(".*", [], [], InterfaceFile, ModuleName), Acc];
@@ -332,15 +333,15 @@ update_port_spec(InterfaceFile,  ModuleName, [Spec|T], Acc, Found) ->
     case expand_spec(Spec) of
 	{ARCH, Shared, Sources} ->
 	    update_port_spec(
-	      InterfaceFile, 
-	      ModuleName, 
-	      T,  
+	      InterfaceFile,
+	      ModuleName,
+	      T,
 	      [module_spec(ARCH, Sources, [], InterfaceFile, ModuleName)|Acc], true);
 	{ARCH, Shared, Sources, Options} ->
 	    update_port_spec(
 	      InterfaceFile,
 	      ModuleName,
-	      T, 
+	      T,
 	      [module_spec(ARCH, Sources, Options, InterfaceFile, ModuleName)|Acc], true);
 	_ ->
 	    update_port_spec(InterfaceFile, ModuleName, T, [Spec|Acc], Found)
